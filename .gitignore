@@ -3,6 +3,7 @@ node_modules/
 .expo/
 dist/
 web-build/
+.vscode
 
 *.orig.*
 *.jks
@@ -23,3 +24,4 @@ yarn-error.*
 .env*.local
 
 *.tsbuildinfo
+test/
