@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { Audio } from "expo-av"
 import type { TimerInfo } from "../types/Timer"
 
 
@@ -14,6 +15,7 @@ const defaultInfo: TimerInfo = { SHORT_INTERVAL: 5, LONG_INTERVAL: 15, WORKING_T
 
 export default function Pomodoro({ setScreenPomodoro, setScreenConfig }: PomodoroProps) {
 
+    const [sound, setSound] = useState<Audio.Sound | undefined>(undefined)
     const [working, setWorking] = useState("00:00")
     const [shortPause, setShortPause] = useState("00:00")
     const [longPause, setLongPause] = useState("00:00")
@@ -51,6 +53,33 @@ export default function Pomodoro({ setScreenPomodoro, setScreenConfig }: Pomodor
 
     }, [info]) 
 
+    
+    const soundMap: { [key: string]: any } = {
+        work: require("../assets/sound/work.mp3"),
+        short: require("../assets/sound/short.mp3"),
+        long: require("../assets/sound/long.mp3"),
+    };
+
+    const playSound = async (soundName: string) => {
+        const soundFile = soundMap[soundName];
+        if (!soundFile) {
+            console.log(`Sound ${soundName} not found!`);
+            return;
+        }
+      
+        const { sound } = await Audio.Sound.createAsync(soundFile);
+        setSound(sound);
+        await sound.playAsync();
+    };  
+
+    useEffect(() => {
+        return sound
+        ? () => {
+            sound.unloadAsync();
+          }
+        : undefined;
+    }, [sound])
+
 
     const formatTime = (totalSeconds: number) => {
         const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0")
@@ -61,6 +90,7 @@ export default function Pomodoro({ setScreenPomodoro, setScreenConfig }: Pomodor
     const handleStartTimer = () => {
         if (!timerRunning && !isPaused) {
             setCurrentPhase("WORKING")
+            playSound("work")
             setRemainingSeconds(info.WORKING_TIME * 60)
             setTimerRunning(true)
         }
@@ -98,15 +128,18 @@ export default function Pomodoro({ setScreenPomodoro, setScreenConfig }: Pomodor
                         if (currentPhase === "WORKING") {
                             if (cycleCount < info.CYCLE - 1) {
                                 setCurrentPhase("SHORT PAUSE")
+                                playSound("short")
                                 setRemainingSeconds(info.SHORT_INTERVAL * 60)
                                 setCycleCount(cycleCount + 1)
                             } else {
                                 setCurrentPhase("LONG PAUSE")
+                                playSound("long")
                                 setRemainingSeconds(info.LONG_INTERVAL * 60)
                                 setCycleCount(0)
                             }
                         } else {
                             setCurrentPhase("WORKING")
+                            playSound("work")
                             setRemainingSeconds(info.WORKING_TIME * 60)
                         }
                         return remainingSeconds
