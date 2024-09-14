@@ -4,6 +4,7 @@ node_modules/
 dist/
 web-build/
 .vscode
+eas.json
 
 *.orig.*
 *.jks
